@@ -5,10 +5,11 @@ import com.pblgllgs.springcloud.msvc.usuarios.services.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
+import javax.validation.Valid;
+import java.util.*;
 
 @RestController
 public class UsuarioController {
@@ -31,15 +32,29 @@ public class UsuarioController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<?> guardar(@RequestBody Usuario usuario){
+    public ResponseEntity<?> guardar(@Valid @RequestBody Usuario usuario, BindingResult result){
+        if (result.hasErrors()){
+            return validar(result);
+        }
+        if(!usuario.getEmail().isEmpty() && usuarioService.existePorEmail(usuario.getEmail())){
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("mensaje", "Ya esta registrado ese email"));
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.guardar(usuario));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editar(@RequestBody Usuario usuario, @PathVariable Long id){
+    public ResponseEntity<?> editar(@Valid @RequestBody Usuario usuario, BindingResult result, @PathVariable Long id){
+        if (result.hasErrors()){
+            return validar(result);
+        }
         Optional <Usuario> o = usuarioService.porId(id);
         if(o.isPresent()){
             Usuario usuarioDB = o.get();
+            if(!usuario.getEmail().isEmpty() && !usuario.getEmail().equalsIgnoreCase(usuarioDB.getEmail()) &&usuarioService.porEmail(usuario.getEmail()).isPresent()){
+                return ResponseEntity.badRequest()
+                        .body(Collections.singletonMap("mensaje", "Ya esta registrado ese email"));
+            }
             usuarioDB.setNombre(usuario.getNombre());
             usuarioDB.setEmail(usuario.getEmail());
             usuarioDB.setPassword(usuario.getPassword());
@@ -56,5 +71,13 @@ public class UsuarioController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
+    }
+
+    private static ResponseEntity<Map<String, String>> validar(BindingResult result) {
+        Map<String, String> errores = new HashMap<>();
+        result.getFieldErrors().forEach(err -> {
+            errores.put(err.getField(), "El campo "+ err.getField() + " " + err.getDefaultMessage());
+        });
+        return ResponseEntity.badRequest().body(errores);
     }
 }
