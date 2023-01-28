@@ -1,7 +1,9 @@
 package com.pblgllgs.springcloud.msvc.cursos.controller;
 
-import com.pblgllgs.springcloud.msvc.cursos.entity.Curso;
+import com.pblgllgs.springcloud.msvc.cursos.models.Usuario;
+import com.pblgllgs.springcloud.msvc.cursos.models.entity.Curso;
 import com.pblgllgs.springcloud.msvc.cursos.services.CursoService;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,10 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 public class CursoController {
@@ -28,7 +27,7 @@ public class CursoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> detalle(@PathVariable Long id){
-        Optional<Curso> o = cursoService.porId(id);
+        Optional<Curso> o = cursoService.porIdConUsuarios(id);
         if (o.isPresent()) {
             return ResponseEntity.ok(o.get());
         }
@@ -67,6 +66,65 @@ public class CursoController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @PutMapping("/asignar-usuario/{cursoId}")
+    public ResponseEntity<?> asignarUsuario(@RequestBody Usuario usuario, @PathVariable Long cursoId){
+        Optional<Usuario> o;
+        try {
+            o = cursoService.asignarUsuario(usuario, cursoId);
+        } catch (FeignException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections
+                            .singletonMap("message","Ocurrió un error al intentar asignar" +
+                                    " un usuario en el otro microservicio" + e.getMessage()));
+        }
+        if(o.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(o.get());
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/crear-usuario/{cursoId}")
+    public ResponseEntity<?> crearUsuario(@RequestBody Usuario usuario, @PathVariable Long cursoId){
+        Optional<Usuario> o;
+        try {
+            o = cursoService.crearUsuario(usuario, cursoId);
+        } catch (FeignException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections
+                            .singletonMap("message","Ocurrió un error al intentar crear un usuario" +
+                                    " en el otro microservicio" + e.getMessage()));
+        }
+        if(o.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(o.get());
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/eliminar-usuario/{cursoId}")
+    public ResponseEntity<?> eliminarUsuario(@RequestBody Usuario usuario, @PathVariable Long cursoId){
+        Optional<Usuario> o;
+        try {
+            o = cursoService.eliminarUsuario(usuario, cursoId);
+        } catch (FeignException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections
+                            .singletonMap("message","Ocurrió un error al intentar eliminar un usuario" +
+                                    " en el otro microservicio" + e.getMessage()));
+        }
+        if(o.isPresent()) {
+            return ResponseEntity.status(HttpStatus.OK).body(o.get());
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/eliminar-curso-usuario/{id}")
+    public ResponseEntity<?> eliminarCursoUsuario(@PathVariable Long id){
+        cursoService.eliminarCursoUsuarioPorId(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
 
     private static ResponseEntity<Map<String, String>> validar(BindingResult result) {
         Map<String, String> errores = new HashMap<>();
