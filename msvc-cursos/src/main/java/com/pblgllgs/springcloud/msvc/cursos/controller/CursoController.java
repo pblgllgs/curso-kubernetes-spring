@@ -5,6 +5,8 @@ import com.pblgllgs.springcloud.msvc.cursos.models.entity.Curso;
 import com.pblgllgs.springcloud.msvc.cursos.services.CursoService;
 import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -18,6 +20,14 @@ public class CursoController {
 
     @Autowired
     private CursoService cursoService;
+
+    @Autowired
+    private ApplicationContext context;
+
+    @GetMapping("/crash")
+    public void crash(){
+        ((ConfigurableApplicationContext)context).close();
+    }
 
 
     @GetMapping("/")
