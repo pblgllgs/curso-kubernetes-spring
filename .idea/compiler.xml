@@ -10,6 +10,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="msvc-cursos" />
+        <module name="security" />
         <module name="msvc-auth" />
         <module name="msvc-gateway" />
         <module name="msvc-usuarios" />
@@ -22,6 +23,7 @@
       <module name="msvc-cursos" options="-parameters" />
       <module name="msvc-gateway" options="-parameters" />
       <module name="msvc-usuarios" options="-parameters" />
+      <module name="security" options="-parameters" />
     </option>
   </component>
 </project>
